@@ -12,8 +12,9 @@ class JWTMiddleware:
             user = self.jwt_authentication.authenticate(request)
             if user:
                 request.user = user
-            # else:
-            #     request.user = None
+                request.is_auth = True
+            else:
+                request.is_auth = False
         except InvalidToken:
             pass  # Handle invalid token error as needed
 

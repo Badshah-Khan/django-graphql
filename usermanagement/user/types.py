@@ -1,10 +1,10 @@
-from graphene import InputObjectType, String, Int, ObjectType, Field, Boolean
+from graphene import InputObjectType, String, Int, ObjectType, Field, Boolean, Date
 
 class LoginInput(InputObjectType):
     username = String(required=True)
     password = String(required=True)
 
-class UserType(ObjectType): 
+class UserType(ObjectType):
     organization = Int()
     organization_name = String()
     user_id = Int()
@@ -15,9 +15,12 @@ class UserType(ObjectType):
     is_superuser = Boolean()
     is_staff = Boolean()
     is_active = Boolean()
+    dob = Date()
+    joining_date = Date()
+    mobile = String()
 
 class TokenType(ObjectType):
-    access_token = String()
+    token = String()
     refresh_token = String()
     user = Field(UserType)
 
@@ -28,22 +31,14 @@ class UserInputType(InputObjectType):
     email = String(required = True)
     organization = Int(required = True)
     password = String(required = True)
-    
-class ResolveUserType(ObjectType):
-    def __init__(self, user, organization):
-        self.user = user
-        self.organization = organization
-    
-    def format(self) -> UserType:
-        return UserType(
-            user_id=self.user.id,
-            username=self.user.username,
-            first_name=self.user.first_name,
-            last_name=self.user.last_name,
-            email=self.user.email,
-            is_superuser = self.user.is_superuser,
-            is_active = self.user.is_active,
-            is_staff = self.user.is_staff,
-            organization = self.organization.id,
-            organization_name = self.organization.name
-        )
+    dob = Date()
+    joining_date = Date()
+    mobile = String()
+
+class UserUpdateInputType(InputObjectType):
+    first_name = String()
+    last_name = String()
+    organization = Int(required = True)
+    dob = Date()
+    joining_date = Date()
+    mobile = String()
