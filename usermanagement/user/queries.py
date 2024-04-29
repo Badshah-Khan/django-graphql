@@ -9,12 +9,13 @@ class UserQuery(ObjectType):
 
     def resolve_users(self, info, where = None, limit = 100, offset = 0, order = None, **kwargs):
         is_auth = info.context.is_auth
-        print("where", where)
         if not is_auth:
             raise Exception("Unauthorized")
         user_obj = info.context.user[0]
-        if user_obj.is_superuser != True or user_obj.is_staff != True:
+        if user_obj.is_superuser != True and user_obj.is_staff != True:
             raise Exception("Not Allowed")
+        if user_obj.is_active is not True:
+            raise Exception("You can't perform this action!")
         query = """select u.*, uo.user_id as user_id, o.name as organization_name, o.id as organization, ee.dob, ee.joining_date, ee.mobile from auth_user u 
                     left join userorganization_userorganization uo on uo.user_id = u.id 
                     left join organization_organization o on uo.organization_id = o.id

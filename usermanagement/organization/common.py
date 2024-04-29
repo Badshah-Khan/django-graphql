@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 import base64
 
-class QrCodeGenerator:
+class CommonMethodOrg:
     def __init__(self, org = None):
         self.organization = org
 
@@ -55,3 +55,14 @@ class QrCodeGenerator:
             f.write(decoded_image)
 
         return os.path.join('public', 'logo', file_name)
+    
+    def delete_file(self, file_path):
+        if file_path != (None, ):
+            public_path = file_path[7:]
+            file_url = os.path.join(settings.PUBLIC_FOLDER_PATH, public_path)
+            if os.path.exists(file_url):
+                # Delete the file
+                os.remove(file_url)
+                print(f"{file_path} deleted successfully.")
+            else:
+                print(f"The file {file_path} does not exist.")

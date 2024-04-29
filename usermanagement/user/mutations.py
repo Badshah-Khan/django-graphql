@@ -1,4 +1,4 @@
-from graphene import ObjectType,  Mutation, Field, ID
+from graphene import ObjectType,  Mutation, Field, ID, Boolean
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -70,8 +70,10 @@ class CreateUser(Mutation):
         
         if organization != input.organization:
             raise Exception("Unauthorized")
-        if user_obj.is_superuser != True or user_obj.is_staff != True:
+        if user_obj.is_superuser != True and user_obj.is_staff != True:
             raise Exception("Not Allowed")
+        if user_obj.is_active is not True:
+            raise Exception("You can't perform this action!")
         del input['organization']
         dob = input.get('dob', None)
         joining_date = input.get('joining_date', None)
@@ -96,7 +98,7 @@ class UpdateUser(Mutation):
         input = UserUpdateInputType(required = True)
         user_id = ID(required = True)
 
-    user = Field(UserType)
+    success = Boolean()
     def mutate(self, info, input, user_id):
         is_auth = info.context.is_auth
         if not is_auth:
@@ -121,6 +123,8 @@ class UpdateUser(Mutation):
             raise Exception("Not Allowed")
         if user_obj.is_staff == True and user.is_staff == True:
             raise Exception("Not Allowed")
+        if user_obj.is_active is not True:
+            raise Exception("You can't perform this action!")
 
         if first_name is not None:
             user.first_name = first_name
@@ -139,10 +143,43 @@ class UpdateUser(Mutation):
             emp_instance.save()
         except Employee.DoesNotExist:
             Employee.objects.create(dob=dob, mobile = mobile, joining_date = joining_date, user_id = user_id)
-        return user
+        return UpdateUser(success = True)
+    
+class ActivateORDeactivateUser(Mutation):
+    class Arguments:
+        id = ID(required = True)
+
+    success = Boolean()
+
+    def mutate(self, info, id):
+        is_auth = info.context.is_auth
+        if not is_auth:
+            raise Exception("Unauthorized")
+        
+        user_obj = info.context.user[0]
+        token_obj = info.context.user[1]
+        organization = token_obj['data']['organization']
+        if user_obj.is_superuser != True and user_obj.is_staff != True:
+            raise Exception("Not Allowed")
+        if user_obj.is_active is not True:
+            raise Exception("You can't perform this action!")
+
+        user = User.objects.get(pk = id)
+        user_org = UserOrganization.objects.get(user = user.id)
+
+        if user_obj.is_staff == True and user_org.organization != organization:
+            raise Exception("Not Allowed")
+        if user.is_superuser:
+            raise Exception("Not Allowed")
+        
+        user.is_active = not user.is_active
+        user.save()
+        return ActivateORDeactivateUser(success = True)
+
 
 # Register the mutation
 class LoginMutation(ObjectType):
     login = Login.Field()
     create_user = CreateUser.Field()
     update_user = UpdateUser.Field()
+    activate_deactivate_user = ActivateORDeactivateUser.Field()

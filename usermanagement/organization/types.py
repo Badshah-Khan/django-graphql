@@ -6,7 +6,7 @@ class OrganizationType(DjangoObjectType):
     org_id = Int()
     class Meta:
         model = Organization
-        fields = ('id', 'name', 'org_email', 'org_phone', 'logo', 'qr_code', 'org_id')
+        fields = ('id', 'name', 'org_email', 'org_phone', 'logo', 'qr_code', 'slug', 'org_id')
         filter_fields = {
             'id': ['exact'],
             'name': ['exact', 'icontains'],
@@ -17,5 +17,23 @@ class OrganizationType(DjangoObjectType):
 
 class OrganizationInputType(InputObjectType):
     name = String(required = True)
+    org_email = String(required = True)
+    org_phone = String(required = True)
+    slug = String(required = True)
+    logo = String(required = True)
+
+class AddressInputType(InputObjectType):
+    street = String(required = True)
+    city = String(required = True)
+    state = String(required = True)
+    postal_code = String(required = True)
+    country = String(required = True)
+    lat = String(required = True)
+    long = String(required = True)
+
+class OrganizationUpdateInputType(InputObjectType):
+    name = String(required = True)
     org_email = String()
     org_phone = String()
+    slug = String()
+    logo = String()
