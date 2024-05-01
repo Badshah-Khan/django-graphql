@@ -1,6 +1,6 @@
 from .models import Address
 from graphene_django import DjangoObjectType
-from graphene import relay
+from graphene import relay, InputObjectType, String, Int
 
 class AddressType(DjangoObjectType):
     class Meta:
@@ -15,3 +15,13 @@ class AddressType(DjangoObjectType):
             'organization': ['exact']
         }
         interfaces = (relay.Node,)
+
+class AddressOrgInputType(InputObjectType):
+    street = String(required = True)
+    city = String(required = True)
+    postal_code = String(required = True)
+    state = String(required = True)
+    country = String(required = True)
+    organization = Int()
+    lat = String()
+    long = String()

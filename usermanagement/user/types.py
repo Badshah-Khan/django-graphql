@@ -1,7 +1,10 @@
 from graphene import InputObjectType, String, Int, ObjectType, Field, Boolean, Date
+from address.types import AddressType, AddressOrgInputType
+from organization.types import OrganizationType
 
 class LoginInput(InputObjectType):
-    username = String(required=True)
+    username = String()
+    email = String()
     password = String(required=True)
 
 class UserType(ObjectType):
@@ -31,9 +34,13 @@ class UserInputType(InputObjectType):
     email = String(required = True)
     organization = Int(required = True)
     password = String(required = True)
+    is_employee = Boolean(required = True)
+    is_superuser = Boolean()
+    is_staff = Boolean()
     dob = Date()
     joining_date = Date()
     mobile = String()
+    address = Field(AddressOrgInputType)
 
 class UserUpdateInputType(InputObjectType):
     first_name = String()
@@ -42,3 +49,8 @@ class UserUpdateInputType(InputObjectType):
     dob = Date()
     joining_date = Date()
     mobile = String()
+
+class UserDetailsType(ObjectType):
+    user = Field(UserType)
+    address = Field(AddressType)
+    organization = Field(OrganizationType)

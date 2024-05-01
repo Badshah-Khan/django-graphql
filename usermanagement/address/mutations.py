@@ -1,22 +1,26 @@
 from graphene import Mutation, String, Boolean, Field, Int, ObjectType
 from .models import Address
-from .types import AddressType
+from .types import AddressType, AddressOrgInputType
 
 class CreateAddress(Mutation):
     class Arguments:
-        street = String(required = True)
-        city = String(required = True)
-        postal_code = String(required = True)
-        state = String(required = True)
-        country = String(required = True)
-        organization = Int(required = True)
+        input = AddressOrgInputType(required = True)
 
     success = Boolean()
-    address = Field(AddressType)
 
-    def mutate(self, info, street, city, postal_code, state, country, organization):
-        address = Address.objects.create(street=street, city=city, postal_code=postal_code, state=state, country=country, organization=organization)
-        return CreateAddress(success=True, organization=address)
+    def mutate(self, info, input):
+        is_auth = info.context.is_auth
+        if not is_auth:
+            raise Exception("Unauthorized")
+        user_obj = info.context.user[0]
+        if user_obj.is_superuser != True:
+            raise Exception("Not Allowed")
+        token_obj = info.context.user[1]
+        organization = token_obj['data']['organization']
+        if user_obj.is_staff == True and organization != input.organization:
+            raise Exception("Not Allowed")
+        Address.objects.create(**input)
+        return CreateAddress(success=True)
 
 class UpdateAddress(Mutation):
     class Arguments:

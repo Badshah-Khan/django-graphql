@@ -58,8 +58,13 @@ class CommonMethodOrg:
     
     def delete_file(self, file_path):
         if file_path != (None, ):
-            public_path = file_path[7:]
-            file_url = os.path.join(settings.PUBLIC_FOLDER_PATH, public_path)
+            print(type(file_path))
+            if type(file_path) == tuple:
+                file_path = file_path[0][7:]
+            else:
+                file_path = file_path[7:]
+            print("public_path", file_path)
+            file_url = os.path.join(settings.PUBLIC_FOLDER_PATH, file_path)
             if os.path.exists(file_url):
                 # Delete the file
                 os.remove(file_url)

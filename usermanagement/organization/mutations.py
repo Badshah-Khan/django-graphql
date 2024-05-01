@@ -1,7 +1,8 @@
-from graphene import Mutation, Boolean, Field, Int, ObjectType, String, ID
+from graphene import Mutation, Boolean, Int, ObjectType, String, ID
 from .models import Organization
+from userorganization.models import UserOrganization
 from address.models import Address
-from .types import OrganizationType, OrganizationInputType, OrganizationUpdateInputType, AddressInputType
+from .types import OrganizationInputType, OrganizationUpdateInputType, AddressInputType
 from .common import CommonMethodOrg
 
 class CreateOrganization(Mutation):
@@ -10,7 +11,6 @@ class CreateOrganization(Mutation):
         address = AddressInputType(required = True)
 
     success = Boolean()
-    organization = Field(OrganizationType)
 
     def mutate(self, info, input, address):
         is_auth = info.context.is_auth
@@ -19,6 +19,8 @@ class CreateOrganization(Mutation):
         user_obj = info.context.user[0]
         if user_obj.is_superuser != True:
             raise Exception("Not Allowed")
+        token_obj = info.context.user[1]
+        user_org = token_obj['data']['organization']
         logo_url = ""
         if input.logo is not None:
             logo_instance = CommonMethodOrg()
@@ -32,7 +34,10 @@ class CreateOrganization(Mutation):
         organization.save()
         if organization:
             Address.objects.create(**address, organization = organization)
-        return CreateOrganization(success=True, organization=organization)
+            if user_org is None:
+                print("userId", user_obj.id)
+                UserOrganization.objects.create(organization = organization, user = user_obj)
+        return CreateOrganization(success=True)
 
 class UpdateOrganization(Mutation):
     class Arguments:
@@ -48,7 +53,10 @@ class UpdateOrganization(Mutation):
         user_obj = info.context.user[0]
         if user_obj.is_superuser != True:
             raise Exception("Not Allowed")
-        
+        token_obj = info.context.user[1]
+        user_org = token_obj['data']['organization']
+        if user_org != 1:
+            raise Exception("Not Permit!")
         organization = Organization.objects.get(pk=organization_id)
         if input.name:
             organization.name = input.name
@@ -79,6 +87,10 @@ class DeleteOrganization(Mutation):
         user_obj = info.context.user[0]
         if user_obj.is_superuser != True:
             raise Exception("Not Allowed")
+        token_obj = info.context.user[1]
+        user_org = token_obj['data']['organization']
+        if user_org != 1:
+            raise Exception("Not Permit!")
         
         organization = Organization.objects.get(pk=id)
         logo = organization.logo,
@@ -101,7 +113,7 @@ class GenerateQrCode(Mutation):
         if not is_auth:
             raise Exception("Unauthorized")
         user_obj = info.context.user[0]
-        if user_obj.is_superuser != True or user_obj.is_staff != True:
+        if user_obj.is_superuser != True and user_obj.is_staff != True:
             raise Exception("Not Allowed")
         organization = Organization.objects.get(pk=organization_id)
         qr_instance = CommonMethodOrg(organization)
@@ -132,7 +144,6 @@ class UploadLogo(Mutation):
         organization.save()
 
         return UploadLogo(success=True)
-    
     
 class OrganizationMutation(ObjectType):
     create_organization = CreateOrganization.Field()

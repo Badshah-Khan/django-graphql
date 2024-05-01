@@ -1,6 +1,7 @@
 from .models import Organization
 from graphene_django import DjangoObjectType
-from graphene import relay, InputObjectType, String, Int
+from graphene import relay, InputObjectType, String, Int, ObjectType, Field
+from address.types import AddressType
 
 class OrganizationType(DjangoObjectType):
     org_id = Int()
@@ -37,3 +38,15 @@ class OrganizationUpdateInputType(InputObjectType):
     org_phone = String()
     slug = String()
     logo = String()
+
+class OrgAddressType(ObjectType):
+    organization = Field(OrganizationType)
+    address = Field(AddressType)
+
+class OrganizationAddressType(ObjectType):
+    name = String()
+    org_email = String()
+    org_phone = String()
+    slug = String()
+    logo = String()
+    qr_code = String()
