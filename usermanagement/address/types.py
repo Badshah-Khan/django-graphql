@@ -6,15 +6,6 @@ class AddressType(DjangoObjectType):
     class Meta:
         model = Address
         fields = '__all__'
-        filter_fields = {
-            'street': ['exact', 'icontains'],
-            'city': ['exact', 'icontains'],
-            'postal_code': ['exact'],
-            'state': ['exact', 'icontains'],
-            'country': ['exact', 'icontains'],
-            'organization': ['exact']
-        }
-        interfaces = (relay.Node,)
 
 class AddressOrgInputType(InputObjectType):
     street = String(required = True)

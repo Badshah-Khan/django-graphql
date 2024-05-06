@@ -15,8 +15,9 @@ from userrole.mutations import RoleMutation
 from userrole.queries import UserRoleQuery
 from usertype.mutations import UserTypeMutation
 from usertype.queries import UserTypeQuery
+from employeeaddress.queries import EmpAddressQuery
 
-class Query(OrganizationQuery, AddressQuery, AttendanceQuery, LeaveQuery, PermissionQuery, UserRoleQuery, UserTypeQuery, UserQuery, ObjectType):
+class Query(OrganizationQuery, AddressQuery, AttendanceQuery, LeaveQuery, PermissionQuery, UserRoleQuery, UserTypeQuery, UserQuery, EmpAddressQuery, ObjectType):
     pass
 
 class Mutation(OrganizationMutation, AddressMutation, AttendanceMutation, LeaveMutation, LoginMutation, PermissionMutation, RoleMutation, UserTypeMutation, ObjectType):

@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from .types import UserType, UserDetailsType
 from userorganization.models import UserOrganization
 from address.models import Address
-import re
+from usermanagement.utils import camel_to_kebab
 
 class UserQuery(ObjectType):
     users = List(UserType, where = JSONString(), limit = Int(), offset = Int(), order = String())
@@ -114,9 +114,3 @@ class UserQuery(ObjectType):
             'organization': user_org.organization,
             'address': org_address
         }
-
-
-def camel_to_kebab(camel_case):
-    pattern = re.compile(r'(?<!^)(?=[A-Z])(?!$)')
-    kebab_case = pattern.sub('_', camel_case).lower()
-    return kebab_case

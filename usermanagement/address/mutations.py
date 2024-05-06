@@ -1,6 +1,7 @@
 from graphene import Mutation, String, Boolean, Field, Int, ObjectType
 from .models import Address
 from .types import AddressType, AddressOrgInputType
+from organization.models import Organization
 
 class CreateAddress(Mutation):
     class Arguments:
@@ -19,7 +20,8 @@ class CreateAddress(Mutation):
         organization = token_obj['data']['organization']
         if user_obj.is_staff == True and organization != input.organization:
             raise Exception("Not Allowed")
-        Address.objects.create(**input)
+        del input['organization']
+        Address.objects.create(**input, organization = Organization.objects.get(pk = organization))
         return CreateAddress(success=True)
 
 class UpdateAddress(Mutation):

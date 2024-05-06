@@ -4,7 +4,7 @@ from graphene import relay, InputObjectType, String, Int, ObjectType, Field
 from address.types import AddressType
 
 class OrganizationType(DjangoObjectType):
-    org_id = Int()
+    org_id = Int(source = 'pk')
     class Meta:
         model = Organization
         fields = ('id', 'name', 'org_email', 'org_phone', 'logo', 'qr_code', 'slug', 'org_id')
