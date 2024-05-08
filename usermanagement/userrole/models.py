@@ -6,6 +6,3 @@ from usertype.models import UserType
 class UserRole(models.Model):
     role = models.ForeignKey(UserType, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    class Meta:
-        ordering = ['role']

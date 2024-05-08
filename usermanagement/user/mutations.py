@@ -1,12 +1,12 @@
 from graphene import ObjectType,  Mutation, Field, ID, Boolean
-from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 from userorganization.models import UserOrganization
 from organization.models import Organization
 from employeedetails.models import Employee
 from employeeaddress.models import EmployeeAddress
-from .types import LoginInput, TokenType, UserInputType, UserUpdateInputType
+from .types import LoginInput, TokenType, UserInputType, UserUpdateInputType, ChangePasswordInputType
 
 class Login(Mutation):
     class Arguments:
@@ -196,10 +196,34 @@ class ActivateORDeactivateUser(Mutation):
         user.save()
         return ActivateORDeactivateUser(success = True)
 
+class ChangePassword(Mutation):
+    class Arguments:
+        input = ChangePasswordInputType(required = True)
+
+    success = Boolean()
+
+    def mutate(self, info, input):
+        is_auth = info.context.is_auth
+        if not is_auth:
+            raise Exception("Unauthorized")
+        
+        user_obj = info.context.user[0]
+        token_obj = info.context.user[1]
+        organization = token_obj['data']['organization']
+        if user_obj.is_active is not True:
+            raise Exception("You can't perform this action!")
+
+        user = User.objects.get(pk = user_obj.id)
+        if user.check_password(input.old_password) != True:
+            raise Exception("Wrong Password")
+        user.password = make_password(input.new_password)
+        user.save()
+        return ChangePassword(success = True)
 
 # Register the mutation
 class LoginMutation(ObjectType):
     login = Login.Field()
     create_user = CreateUser.Field()
     update_user = UpdateUser.Field()
+    change_password = ChangePassword.Field()
     activate_deactivate_user = ActivateORDeactivateUser.Field()

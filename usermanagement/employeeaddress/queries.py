@@ -11,9 +11,6 @@ class EmpAddressQuery(ObjectType):
         if not is_auth:
             raise Exception("Unauthorized")
         user_obj = info.context.user[0]
-        if user_obj.is_superuser != True:
-            raise Exception("Not Allowed")
-        
         token_obj = info.context.user[1]
         user_org = token_obj['data']['organization']
         if user_org is None:

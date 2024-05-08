@@ -21,14 +21,16 @@ class UserTypeQuery(ObjectType):
             raise Exception("Not Allowed")
         if user_obj.is_active is not True:
             raise Exception("You can't perform this action!")
-        if user_obj.is_superuser == True and organization == 1:
-            try:
-                result = UserType.objects.all()
-            except UserType.DoesNotExist:
-                result =  []
-        else:
-            try:
-                result = UserType.objects.filter(organization = organization)
-            except UserType.DoesNotExist:
-                result = []
+        try:
+            result = UserType.objects.all()
+        except UserType.DoesNotExist:
+            result =  []
+        if where is not None and len(result) > 0:
+            role_id = where.get('id', None)
+            user_organization = where.get('organization', None)
+            if user_organization is not None:
+                result = result.filter(organization = user_organization)
+            if role_id is not None:
+                result = result.filter(id = role_id)
+        result = result.filter(organization = organization)
         return result

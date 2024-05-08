@@ -54,3 +54,7 @@ class UserDetailsType(ObjectType):
     user = Field(UserType)
     address = Field(AddressType)
     organization = Field(OrganizationType)
+
+class ChangePasswordInputType(InputObjectType):
+    old_password = String(required = True)
+    new_password = String(required = True)

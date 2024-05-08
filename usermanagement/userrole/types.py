@@ -1,16 +1,13 @@
-from .models import UserRole
-from graphene_django import DjangoObjectType
-from graphene import relay, InputObjectType, Int
+from graphene import String, InputObjectType, Int, ObjectType
 
-class RoleType(DjangoObjectType):
-    class Meta:
-        model = UserRole
-        fields = '__all__'
-        filter_fields = {
-            'role': ['exact'],
-            'user': ['exact']
-        }
-        interfaces = (relay.Node,)
+class RoleType(ObjectType):
+    id = Int()
+    user_id = Int()
+    role_id = Int()
+    user_role = String()
+    first_name = String()
+    last_name = String()
+    organization = String()
 
 class RoleInputType(InputObjectType):
     role = Int(required = True)

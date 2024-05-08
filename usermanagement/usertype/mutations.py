@@ -50,6 +50,8 @@ class UpdateUserType(Mutation):
         if user_obj.is_active is not True:
             raise Exception("You can't perform this action!")
         user_type = UserType.objects.get(pk=id)
+        if organization != 1 and organization != user_type.organization.id:
+            raise Exception("Not Permit!")
         if input.role:
             user_type.role = input.role
         user_type.save()
