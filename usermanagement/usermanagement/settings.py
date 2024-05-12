@@ -20,7 +20,7 @@ SECRET_KEY = 'django-insecure-i5b)2hs5n%vf3btl8z=yfgifv7pu%=qh4qbu&d!pq+rwu%+$(a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.1.9', '127.0.0.1', '192.168.133.20']
 
 CORS_ALLOWED_ORIGINS = (
     'http://localhost:3000', 'http://127.0.0.1:3000',
@@ -53,7 +53,10 @@ INSTALLED_APPS = [
     'userpermission',
     'userrole',
     'employeedetails',
-    'employeeaddress'
+    'employeeaddress',
+    'workingdays',
+    'holydays',
+    'message'
 ]
 
 MIDDLEWARE = [
@@ -106,7 +109,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'usermanagement.wsgi.application'
-
+ASGI_APPLICATION = 'usermanagement.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases

@@ -8,6 +8,7 @@ from usermanagement.utils import camel_to_kebab
 class UserQuery(ObjectType):
     users = List(UserType, where = JSONString(), limit = Int(), offset = Int(), order = String())
     user_details = Field(UserDetailsType, id = Int(required = True))
+    user_search = List(UserType, where = JSONString())
 
     def resolve_users(self, info, where = None, limit = 100, offset = 0, order = None, **kwargs):
         is_auth = info.context.is_auth
@@ -22,7 +23,7 @@ class UserQuery(ObjectType):
         user_org = token_obj['data']['organization']
         if user_org is None:
             return []
-        query = """select u.*, uo.user_id as user_id, o.name as organization_name, o.id as organization, ee.dob, ee.joining_date, ee.mobile from auth_user u 
+        query = """select u.*, uo.user_id as user_id, o.name as organization_name, o.id as organization, ee.dob, ee.joining_date, ee.profile, ee.mobile from auth_user u 
                     left join userorganization_userorganization uo on uo.user_id = u.id 
                     left join organization_organization o on uo.organization_id = o.id
                     left join employeedetails_employee ee on ee.user_id = u.id"""
@@ -114,3 +115,36 @@ class UserQuery(ObjectType):
             'organization': user_org.organization,
             'address': org_address
         }
+    
+    def resolve_user_search(self, info, where = None):
+        is_auth = info.context.is_auth
+        if not is_auth:
+            raise Exception("Unauthorized")
+        user_obj = info.context.user[0]
+        if user_obj.is_active is not True:
+            raise Exception("You can't perform this action!")
+        token_obj = info.context.user[1]
+        user_org = token_obj['data']['organization']
+        if user_org is None:
+            return []
+        query = """select u.*, uo.user_id as user_id, o.name as organization_name, o.id as organization, ee.dob, ee.joining_date, ee.profile, ee.mobile from auth_user u 
+                    left join userorganization_userorganization uo on uo.user_id = u.id 
+                    left join organization_organization o on uo.organization_id = o.id
+                    left join employeedetails_employee ee on ee.user_id = u.id"""
+        parameters = []
+        if where is not None:
+            whereQuery = ""
+            search = where.get('search', None)     
+            if search is not None or search != '':
+                whereQuery = """where (u.username ilike %s or u.first_name ilike %s or u.last_name ilike %s
+                )"""
+                parameters.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
+
+            if whereQuery != "":
+                whereQuery = whereQuery + "and" + " o.id = %s"
+            else:
+                whereQuery = "where o.id = %s"
+            parameters.extend([f"{user_org}"])
+            query = f"{query} {whereQuery}"
+
+        return User.objects.raw(query, parameters)

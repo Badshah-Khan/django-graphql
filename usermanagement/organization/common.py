@@ -6,14 +6,20 @@ from io import BytesIO
 from django.conf import settings
 from django.core.files.base import ContentFile
 import base64
+import json
 
 class CommonMethodOrg:
     def __init__(self, org = None):
         self.organization = org
 
     def generateQrCode(self):
+        print(self.organization.id)
         qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
-        qr.add_data(self.organization)
+        org_data = json.dumps({
+            'name': self.organization.name,
+            'id': self.organization.id
+        })
+        qr.add_data(org_data)
         qr.make(fit=True)
 
         # Create an in-memory buffer to store the QR code image
@@ -56,6 +62,21 @@ class CommonMethodOrg:
 
         return os.path.join('public', 'logo', file_name)
     
+    def upload_user_profile(self, profile):
+        decoded_image = base64.b64decode(profile)
+
+        profile_dir = os.path.join(settings.PUBLIC_FOLDER_PATH, 'profile')
+        os.makedirs(profile_dir, exist_ok=True)
+
+        file_name = f'{uuid.uuid4()}.png'
+        # Save the image to the public folder
+        profile_path = os.path.join(profile_dir, file_name)
+        # Save the image file to a location on your server
+        with open(profile_path, 'wb') as f:
+            f.write(decoded_image)
+
+        return os.path.join('public', 'profile', file_name)
+
     def delete_file(self, file_path):
         if file_path != (None, ):
             print(type(file_path))

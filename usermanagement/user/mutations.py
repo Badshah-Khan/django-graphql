@@ -1,9 +1,10 @@
-from graphene import ObjectType,  Mutation, Field, ID, Boolean
+from graphene import ObjectType,  Mutation, Field, ID, Boolean, String
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 from userorganization.models import UserOrganization
 from organization.models import Organization
+from organization.common import CommonMethodOrg
 from employeedetails.models import Employee
 from employeeaddress.models import EmployeeAddress
 from .types import LoginInput, TokenType, UserInputType, UserUpdateInputType, ChangePasswordInputType
@@ -42,6 +43,7 @@ class Login(Mutation):
             if emp_details:
                 user.dob = emp_details.dob
                 user.joining_date = emp_details.joining_date
+                user.profile = emp_details.profile
         except Employee.DoesNotExist:
             # Handle the case where no matching employee is found
             print("Employee not found for the specified user.")
@@ -208,8 +210,6 @@ class ChangePassword(Mutation):
             raise Exception("Unauthorized")
         
         user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        organization = token_obj['data']['organization']
         if user_obj.is_active is not True:
             raise Exception("You can't perform this action!")
 
@@ -220,10 +220,38 @@ class ChangePassword(Mutation):
         user.save()
         return ChangePassword(success = True)
 
+class UpdateProfile(Mutation):
+    class Arguments:
+        profile = String(required = True)
+
+    success = Boolean()
+
+    def mutate(self, info, profile):
+        is_auth = info.context.is_auth
+        if not is_auth:
+            raise Exception("Unauthorized")
+        
+        user_obj = info.context.user[0]
+        if user_obj.is_active is not True:
+            raise Exception("You can't perform this action!")
+
+        user = User.objects.get(pk = user_obj.id)
+        
+        profile_instance = CommonMethodOrg()
+        url = profile_instance.upload_user_profile(profile)
+        try:
+            emp = Employee.objects.get(user = user)
+            emp.profile = url
+            emp.save()
+        except Employee.DoesNotExist:
+            Employee.objects.create(user = user, profile = url)
+        return UpdateProfile(success = True)
+
 # Register the mutation
 class LoginMutation(ObjectType):
     login = Login.Field()
     create_user = CreateUser.Field()
     update_user = UpdateUser.Field()
     change_password = ChangePassword.Field()
+    update_profile = UpdateProfile.Field()
     activate_deactivate_user = ActivateORDeactivateUser.Field()
