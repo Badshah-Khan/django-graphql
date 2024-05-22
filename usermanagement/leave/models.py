@@ -8,12 +8,12 @@ class Leave(models.Model):
   reason = models.CharField(max_length=255, blank=True, null=True)
   from_date = models.DateField()
   to_date = models.DateField()
+  status = models.CharField(default='pending')
   is_approved = models.BooleanField(default=False)
+  is_half_day = models.BooleanField(default=False)
+  num_of_days = models.IntegerField(blank=True, null=True)
   approved_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='approved_leaves')
   user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_leaves')
   organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
   created_at = models.DateField(auto_now_add=True)
   updated_at = models.DateField(auto_now=True)
-
-  class Meta:
-    ordering = ['-id']

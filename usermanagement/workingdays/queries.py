@@ -1,5 +1,9 @@
-from graphene import ObjectType, Int, String, List, JSONString
+from graphene import ObjectType, Int, String, Field, JSONString
 from .models import WorkingDays
+from configuration.models import Configuration
+from holydays.models import Holydays
+from django.db.models import Q
+from datetime import datetime, timedelta
 
 class WorkingDaysType(ObjectType):
     total_working_days = Int()
@@ -10,24 +14,55 @@ class WorkingDaysType(ObjectType):
     year = String()
 
 class WorkingDaysQuery(ObjectType):
-    working_days = List(WorkingDaysType, where = JSONString(), limit = Int(), offset = Int(), order = String())
+    working_days = Field(WorkingDaysType, where = JSONString())
 
-    def resolve_working_days(self, info, where = None, limit = 100, offset = 0, order = None):
+    def resolve_working_days(self, info, where = {}):
         is_auth = info.context.is_auth
         if not is_auth:
             raise Exception("Unauthorized")
         
-        user_obj = info.context.user[0]
+        token_obj = info.context.user[1]
+        user_org = token_obj['data']['organization']
+        year = where.get('year', None)
+        month = where.get('month', None)
+        try:
+            config = Configuration.objects.get(organization_id = user_org)
+            saturday_working = config.configuration
+        except Configuration.DoesNotExist:
+            saturday_working = {
+                'isSaturdayWorking': False
+            }
 
-        result = WorkingDays.objects.all()
-        if where is not None:
-            year = where.get('year', None)
-            month = where.get('month', None)
-            id = where.get('id', None)
-            if year is not None:
-                result = result.filter(year = year)
-            if month is not None:
-                result = result.filter(month = month)
-            if id is not None:
-                result = result.filter(pk= id)
-        return result
+        today = datetime.now().date()
+        filter = where.get('filter', None)
+        working_days = 0
+        if filter is not None:
+            if filter == 'year':
+                result = WorkingDays.objects.filter(year = year)
+                for item in result:
+                    if saturday_working['isSaturdayWorking'] == True:
+                        working_days += item.total_working_days + item.saturday
+                    else:
+                        working_days += item.total_working_days
+                start = today.replace(month=1, day=1)
+                end = today.replace(month=12, day=31)
+            elif filter == 'week':
+                working_days += 5
+                start = today - timedelta(days=today.weekday())
+                end = start + timedelta(days=6)
+            elif filter == 'month':
+                result = WorkingDays.objects.get(year = year, month=month)
+                if saturday_working['isSaturdayWorking'] == True:
+                        working_days += result.total_working_days + result.saturday
+                else:
+                    working_days += result.total_working_days
+                start = today.replace(day=1)
+                end = start.replace(day=1, month=start.month % 12 + 1) - timedelta(days=1)
+            holydays = Holydays.objects.filter(Q(from_date__gte = start) & Q(from_date__lte=end))
+        holyday = 0
+        for item in holydays:
+            holyday += item.num_of_days
+        total_working_days = working_days - holyday
+        return {
+            'total_working_days': total_working_days,
+        }

@@ -20,18 +20,21 @@ from workingdays.mutations import WorkingDaysMutation
 from workingdays.queries import WorkingDaysQuery
 from message.mutations import MessageMutation
 from message.queries import MessageQuery
-from message.queries import MessageSubscription
+from userstatus.queries import UserStatusQuery
+from configuration.mutations import ConfigurationMutation
+from holydays.mutations import HolydayMutation
+from holydays.queries import HolydayQuery
 
 class Query(OrganizationQuery, AddressQuery, AttendanceQuery, LeaveQuery, 
-            PermissionQuery, UserRoleQuery, UserTypeQuery, UserQuery,
-            EmpAddressQuery, WorkingDaysQuery, MessageQuery, ObjectType):
+            PermissionQuery, UserRoleQuery, UserTypeQuery, UserQuery, HolydayQuery,
+            EmpAddressQuery, WorkingDaysQuery, MessageQuery, UserStatusQuery, ObjectType):
     pass
 
-class Mutation(OrganizationMutation, AddressMutation, AttendanceMutation, 
-               LeaveMutation, LoginMutation, PermissionMutation, 
+class Mutation(OrganizationMutation, AddressMutation, AttendanceMutation, HolydayMutation,
+               LeaveMutation, LoginMutation, PermissionMutation, ConfigurationMutation,
                RoleMutation, UserTypeMutation, WorkingDaysMutation, MessageMutation,
                ObjectType):
     pass
 
-schema = Schema(query=Query, mutation=Mutation, subscription=MessageSubscription)
+schema = Schema(query=Query, mutation=Mutation)
 

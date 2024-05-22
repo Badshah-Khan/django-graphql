@@ -1,6 +1,6 @@
-from graphene import Mutation, Boolean, Field, Int, Date, Time, ObjectType
+from graphene import Mutation, Boolean, Int, ObjectType
 from .models import Attendance
-from .types import AttendanceType, AttendanceInput, AttendanceUpdateInput
+from .types import AttendanceInput, AttendanceUpdateInput
 
 class CreateAttendance(Mutation):
     class Arguments:
@@ -9,7 +9,6 @@ class CreateAttendance(Mutation):
     success = Boolean()
 
     def mutate(self, info, input):
-        print("input", input)
         is_auth = info.context.is_auth
         if not is_auth:
             raise Exception("Unauthorized")
@@ -69,7 +68,7 @@ class DeleteAttendance(Mutation):
         user_obj = info.context.user[0]
         token_obj = info.context.user[1]
         user_org = token_obj['data']['organization']
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
+        if user_obj.is_superuser != True:
             raise Exception("Not Allowed")
         attendance = Attendance.objects.get(pk=id, organization_id = user_org)
         attendance.delete()

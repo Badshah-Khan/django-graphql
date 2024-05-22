@@ -1,6 +1,7 @@
 from django.urls import path
-from .consumers import SubscriptionConsumer
+from .consumers import SubscriptionConsumer, TypingConsumer
 
 websocket_urlpatterns = [
-    path('ws/subscriptions/', SubscriptionConsumer.as_asgi()),
+    path('graphql/', SubscriptionConsumer.as_asgi()),
+    path('graphql/typing/', TypingConsumer.as_asgi()),
 ]

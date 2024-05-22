@@ -22,7 +22,6 @@ class MessageType(ObjectType):
     date = DateTime()
     content = String()
     is_read = Boolean()
-    attachments = List(String)
     is_deleted = Boolean()
     is_accepted = Boolean()
     organization = Int()

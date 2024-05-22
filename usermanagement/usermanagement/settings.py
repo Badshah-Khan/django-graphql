@@ -20,7 +20,7 @@ SECRET_KEY = 'django-insecure-i5b)2hs5n%vf3btl8z=yfgifv7pu%=qh4qbu&d!pq+rwu%+$(a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.9', '127.0.0.1', '192.168.133.20']
+ALLOWED_HOSTS = ['192.168.1.2', '127.0.0.1', '192.168.29.126', '192.168.1.3', '192.168.1.9', '192.168.133.20']
 
 CORS_ALLOWED_ORIGINS = (
     'http://localhost:3000', 'http://127.0.0.1:3000',
@@ -33,6 +33,7 @@ CORS_ALLOW_CREDENTIALS = True
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,8 +57,17 @@ INSTALLED_APPS = [
     'employeeaddress',
     'workingdays',
     'holydays',
-    'message'
+    'message',
+    'channels',
+    'userstatus',
+    'configuration'
 ]
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',  # Example configuration
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

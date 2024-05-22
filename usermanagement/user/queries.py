@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from .types import UserType, UserDetailsType
 from userorganization.models import UserOrganization
 from address.models import Address
-from usermanagement.utils import camel_to_kebab
+from usermanagement.utils import camel_to_kebab, super_staff_authorization, organization_validation, user_authentication
 
 class UserQuery(ObjectType):
     users = List(UserType, where = JSONString(), limit = Int(), offset = Int(), order = String())
@@ -11,16 +11,8 @@ class UserQuery(ObjectType):
     user_search = List(UserType, where = JSONString())
 
     def resolve_users(self, info, where = None, limit = 100, offset = 0, order = None, **kwargs):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
-        if user_obj.is_active is not True:
-            raise Exception("You can't perform this action!")
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
+        user_obj = super_staff_authorization(info)
+        user_org = organization_validation(info)
         if user_org is None:
             return []
         query = """select u.*, uo.user_id as user_id, o.name as organization_name, o.id as organization, ee.dob, ee.joining_date, ee.profile, ee.mobile from auth_user u 
@@ -94,14 +86,7 @@ class UserQuery(ObjectType):
         return user_organizations
 
     def resolve_user_details(self, info, id):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
-        if user_obj.is_active is not True:
-            raise Exception("You can't perform this action!")
+        super_staff_authorization(info)
         try:
             user_org = UserOrganization.objects.get(user = id)
         except UserOrganization.DoesNotExist:
@@ -117,14 +102,8 @@ class UserQuery(ObjectType):
         }
     
     def resolve_user_search(self, info, where = None):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        if user_obj.is_active is not True:
-            raise Exception("You can't perform this action!")
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
+        user_authentication(info)
+        user_org = organization_validation(info)
         if user_org is None:
             return []
         query = """select u.*, uo.user_id as user_id, o.name as organization_name, o.id as organization, ee.dob, ee.joining_date, ee.profile, ee.mobile from auth_user u 

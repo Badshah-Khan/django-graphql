@@ -1,8 +1,9 @@
 from graphene import ObjectType, List, JSONString, Field, Int
 from .models import Message
-from .types import MessageUserType, UserMessageType, MessageType
-from .consumers import SubscriptionConsumer
+from .types import UserMessageType, MessageType
 from django.db.models import Q
+from channels.layers import get_channel_layer
+from .common import Common
 
 class MessageQuery(ObjectType):
     messages = List(MessageType, where = JSONString())
@@ -18,7 +19,7 @@ class MessageQuery(ObjectType):
         sender_id = where.get('sender', None)
         if sender_id is None:
             raise Exception('Something went wrong!')
-        result = Message.objects.filter(Q(organization = user_org) 
+        result = Message.objects.filter(Q(organization = user_org) & Q(is_deleted = False) 
             & ((Q(receiver_id = user_obj.id) & Q(sender_id = sender_id)) | (Q(receiver_id = sender_id) & Q(sender_id = user_obj.id)) ))
         return result
     
@@ -29,61 +30,37 @@ class MessageQuery(ObjectType):
         user_obj = info.context.user[0]
         token_obj = info.context.user[1]
         user_org = token_obj['data']['organization']
-        query = '''WITH RankedMessages AS (
-            SELECT
-                mm.id,
-                mm.sender_id,
-                mm.receiver_id,
-                mm.content,
-                mm.date,
-                au.id AS user_id,
-                au.first_name,
-                au.last_name,
-                ee.profile,
-                ROW_NUMBER() OVER (PARTITION BY au.id ORDER BY mm.date DESC) AS message_rank
-            FROM
-                message_message mm
-            LEFT JOIN
-                auth_user au ON mm.receiver_id = au.id OR mm.sender_id = au.id
-            LEFT JOIN
-            employeedetails_employee ee ON ee.user_id = au.id
-            where mm.organization_id = %s
-            )
-            SELECT
-                id,
-                user_id,
-                sender_id,
-                receiver_id,
-                content,
-                date,
-                profile,
-                first_name,
-                last_name
-            FROM
-                RankedMessages
-            WHERE
-                message_rank = 1 and user_id != %s;
-        '''
-        parameters = []
-        parameters.extend([user_org, user_obj.id])
-        result = Message.objects.raw(query, parameters)
+        result = Common().users_list(user_obj.id, user_org)
         return result
     
 class MessageSubscription(ObjectType):
-    new_message = Field(MessageUserType)
+    new_message = Field(MessageType, sender_id = Int())
+    # new_user = List(UserMessageType, where = JSONString())
 
-    async def resolve_new_message(root, info):
-        # Instantiate WebSocket consumer
-        consumer = SubscriptionConsumer()
+    async def resolve_new_message(root, info, sender_id):
+        print("subscription")
+        is_auth = info.context.is_auth
+        if not is_auth:
+            raise Exception("Unauthorized")
 
-        # Subscribe the consumer to new message updates
-        # (Subscription logic depends on your application design)
+        message = Message.objects.get(Q(sender_id = sender_id) | Q(receiver_id = sender_id))
 
-        # Send subscription confirmation message
-        await consumer.send_update({'message': 'Subscribed to new messages.'})
-
-        # Implement any cleanup logic when the subscription ends
-        # For example, unsubscribe the consumer from updates
-
-        # Return the consumer
-        return consumer
+        channel_layer = get_channel_layer()
+        await channel_layer.group_send(
+            "chat_netforth",
+            {
+                'type': 'chat.message',
+                'message': {
+                    'id': message.id,
+                    'content': message.content,
+                    'sender_id': message.sender_id,
+                    'receiver_id': message.receiver_id,
+                    'date': message.date,
+                    'is_read': message.is_read,
+                    'is_deleted': message.is_deleted,
+                    'is_accepted': message.is_accepted,
+                }
+            }
+        )
+        
+        return message
