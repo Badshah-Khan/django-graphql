@@ -1,28 +1,15 @@
 from graphene import ObjectType, List, JSONString, Int, String
 from .models import UserRole
 from .types import RoleType
-from usermanagement.utils import camel_to_kebab
+from usermanagement.utils import camel_to_kebab, super_staff_authorization, organization_validation
 
 
 class UserRoleQuery(ObjectType):
     roles = List(RoleType, where = JSONString(), limit = Int(), offset = Int(), order = String())
 
     def resolve_roles(self, info, where = None, limit = 100, offset = 0, order = None):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        organization = token_obj['data']['organization']
-        
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
-        if organization is None:
-            raise Exception("Not Allowed")
-        if user_obj.is_active is not True:
-            raise Exception("You can't perform this action!")
-
+        super_staff_authorization(info)
+        organization = organization_validation(info)
         query = """select au.first_name, uu.user_id, uu.role_id, au.last_name, oo.name as organization, uu2.role as user_role, uu.id from userrole_userrole uu 
                     left join auth_user au on au.id = uu.user_id 
                     left join usertype_usertype uu2 on uu2.id = uu.role_id 

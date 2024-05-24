@@ -1,6 +1,7 @@
 from graphene import Mutation, Boolean, Int, ObjectType
 from .models import Attendance
 from .types import AttendanceInput, AttendanceUpdateInput
+from usermanagement.utils import user_authentication, organization_validation, super_staff_authorization, super_authorization
 
 class CreateAttendance(Mutation):
     class Arguments:
@@ -9,21 +10,24 @@ class CreateAttendance(Mutation):
     success = Boolean()
 
     def mutate(self, info, input):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
-        if user_org != input.organization:
-            raise Exception("Invalid Organization!")
+        user_obj = user_authentication(info)
+        user_org = organization_validation(info, input.organization)
         try:
-            attendance = Attendance.objects.get(user = user_obj.id, organization = user_org, date = input.date)
+            attendance = Attendance.objects.get(
+                user = user_obj.id, 
+                organization = user_org, 
+                date = input.date
+            )
             if attendance is not None:
                 attendance.out_time = input.current_time
                 attendance.save()
         except Attendance.DoesNotExist:
-            Attendance.objects.create(date = input.date, in_time = input.current_time, organization_id = user_org, user_id = user_obj.id)
+            Attendance.objects.create(
+                date = input.date, 
+                in_time = input.current_time, 
+                organization_id = user_org, 
+                user_id = user_obj.id
+            )
         return CreateAttendance(success=True)
 
 class UpdateAttendance(Mutation):
@@ -34,16 +38,8 @@ class UpdateAttendance(Mutation):
     success = Boolean()
 
     def mutate(self, info, id, input):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
-        if user_org != input.organization:
-            raise Exception("Not Allowed")
+        super_staff_authorization(info)
+        organization_validation(info, input.organization)
         attendance = Attendance.objects.get(pk=id, user = input.user, organization = input.organization)
         date = input.get('date', None)
         if date is not None:
@@ -62,14 +58,8 @@ class DeleteAttendance(Mutation):
     success = Boolean()
 
     def mutate(self, info, id):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
-        if user_obj.is_superuser != True:
-            raise Exception("Not Allowed")
+        super_authorization(info)
+        user_org = organization_validation(info)
         attendance = Attendance.objects.get(pk=id, organization_id = user_org)
         attendance.delete()
         return DeleteAttendance(success=True)

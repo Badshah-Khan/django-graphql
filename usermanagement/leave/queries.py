@@ -3,15 +3,13 @@ from .models import Leave
 from .types import LeaveType
 from django.db.models import Q
 from datetime import datetime, timedelta
+from usermanagement.utils import user_authentication
 
 class LeaveQuery(ObjectType):
     leaves = List(LeaveType, where = JSONString())
 
     def resolve_leaves(self, info, where):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
+        user_obj = user_authentication(info)
         filter = where.get('filter', None)
 
         today = datetime.now().date()

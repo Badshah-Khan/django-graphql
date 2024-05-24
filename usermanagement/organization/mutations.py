@@ -4,6 +4,7 @@ from userorganization.models import UserOrganization
 from address.models import Address
 from .types import OrganizationInputType, OrganizationUpdateInputType, AddressInputType
 from .common import CommonMethodOrg
+from usermanagement.utils import super_authorization, organization_validation, system_user, super_staff_authorization
 
 class CreateOrganization(Mutation):
     class Arguments:
@@ -13,14 +14,8 @@ class CreateOrganization(Mutation):
     success = Boolean()
 
     def mutate(self, info, input, address):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        if user_obj.is_superuser != True:
-            raise Exception("Not Allowed")
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
+        user_obj = super_authorization(info)
+        user_org = organization_validation(info)
         logo_url = ""
         if input.logo is not None:
             logo_instance = CommonMethodOrg()
@@ -35,8 +30,7 @@ class CreateOrganization(Mutation):
         if organization:
             Address.objects.create(**address, organization = organization)
             if user_org is None:
-                print("userId", user_obj.id)
-                UserOrganization.objects.create(organization = organization, user = user_obj)
+                UserOrganization.objects.create(organization = organization, user_id = user_obj.id)
         return CreateOrganization(success=True)
 
 class UpdateOrganization(Mutation):
@@ -47,16 +41,7 @@ class UpdateOrganization(Mutation):
     success = Boolean()
 
     def mutate(self, info, organization_id, input):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        if user_obj.is_superuser != True:
-            raise Exception("Not Allowed")
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
-        if user_org != 1:
-            raise Exception("Not Permit!")
+        system_user(info)
         organization = Organization.objects.get(pk=organization_id)
         if input.name:
             organization.name = input.name
@@ -81,22 +66,11 @@ class DeleteOrganization(Mutation):
     success = Boolean()
 
     def mutate(self, info, id):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        if user_obj.is_superuser != True:
-            raise Exception("Not Allowed")
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
-        if user_org != 1:
-            raise Exception("Not Permit!")
-        
+        system_user(info)
         organization = Organization.objects.get(pk=id)
         logo = organization.logo,
         qr_code = organization.qr_code
         common_instance = CommonMethodOrg()
-        print("logo", logo)
         common_instance.delete_file(logo)
         common_instance.delete_file(qr_code)
         organization.delete()
@@ -109,12 +83,7 @@ class GenerateQrCode(Mutation):
     success = Boolean()
 
     def mutate(self, info, organization_id):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
+        super_staff_authorization(info)
         organization = Organization.objects.get(pk=organization_id)
         qr_instance = CommonMethodOrg(organization)
         url = qr_instance.generateQrCode()
@@ -130,13 +99,7 @@ class UploadLogo(Mutation):
     success = Boolean()
 
     def mutate(self, info, organization_id, data):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        if user_obj.is_superuser != True or user_obj.is_staff != True:
-            raise Exception("Not Allowed")
-        
+        super_staff_authorization(info)
         logo_instance = CommonMethodOrg()
         url = logo_instance.upload_logo(data)
         organization = Organization.objects.get(pk=organization_id)

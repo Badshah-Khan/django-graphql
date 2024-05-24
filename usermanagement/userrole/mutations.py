@@ -1,6 +1,7 @@
-from graphene import Mutation, Boolean, Field, Int, ObjectType
+from graphene import Mutation, Boolean, Int, ObjectType
 from .models import UserRole
-from .types import RoleType, RoleInputType
+from .types import RoleInputType
+from usermanagement.utils import super_staff_authorization, organization_validation
 
 class CreateRole(Mutation):
     class Arguments:
@@ -9,20 +10,10 @@ class CreateRole(Mutation):
     success = Boolean()
 
     def mutate(self, info, input):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        organization = token_obj['data']['organization']
-        
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
+        user_obj = super_staff_authorization(info)
+        organization = organization_validation(info)
         if organization is None:
             raise Exception("Not Allowed")
-        if user_obj.is_active is not True:
-            raise Exception("You can't perform this action!")
         if user_obj.id == input.user:
             raise Exception("Not Allowed")
         try:
@@ -41,20 +32,10 @@ class UpdateRole(Mutation):
     success = Boolean()
 
     def mutate(self, info, id, input):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        organization = token_obj['data']['organization']
-        
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
+        super_staff_authorization(info)
+        organization = organization_validation(info)
         if organization is None:
             raise Exception("Not Allowed")
-        if user_obj.is_active is not True:
-            raise Exception("You can't perform this action!")
         role = UserRole.objects.get(pk=id)
         if role and role.role.organization_id != organization:
             raise Exception("You can't perform this action!")
@@ -72,20 +53,8 @@ class DeleteRole(Mutation):
     success = Boolean()
 
     def mutate(self, info, id):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        organization = token_obj['data']['organization']
-        
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
-        if organization is None:
-            raise Exception("Not Allowed")
-        if user_obj.is_active is not True:
-            raise Exception("You can't perform this action!")
+        super_staff_authorization(info)
+        organization = organization_validation(info)
         role = UserRole.objects.get(pk=id)
         if role and role.role.organization_id != organization:
             raise Exception("You can't perform this action!")

@@ -1,20 +1,16 @@
-from graphene import ObjectType, List, JSONString, Int, String
+from graphene import ObjectType, List, JSONString
 from .models import Attendance
 from .types import AttendanceUserType
 from datetime import datetime, timedelta
 from django.db.models import Q
+from usermanagement.utils import organization_validation, user_authentication
 
 class AttendanceQuery(ObjectType):
-    attendances = List(AttendanceUserType, where = JSONString(), limit = Int(), offset = Int(), order = String())
+    attendances = List(AttendanceUserType, where = JSONString())
 
-    def resolve_attendances(self, info, where = None, limit = 100, offset = 0, order = None):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
+    def resolve_attendances(self, info, where = None):
+        user_obj = user_authentication(info)
+        user_org = organization_validation(info)
         if user_org is None:
             raise Exception("You don't have organization. Please Create to access this")
         

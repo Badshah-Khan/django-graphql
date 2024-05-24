@@ -1,23 +1,16 @@
 from graphene import ObjectType, List, JSONString, Int, String
 from .models import EmployeeAddress
-from usermanagement.utils import camel_to_kebab
+from usermanagement.utils import camel_to_kebab, organization_validation, super_staff_authorization
 from .types import EmpAddressType
 
 class EmpAddressQuery(ObjectType):
     emp_addresses = List(EmpAddressType, where = JSONString(), limit = Int(), offset = Int(), order = String())
 
     def resolve_emp_addresses(self, info, where = None, limit = 100, offset = 0, order = None):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
+        user_obj = super_staff_authorization(info)
+        user_org = organization_validation(info)
         if user_org is None:
             raise Exception("You don't have organization. Please Create to access this")
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Permit!")
-        
         query = """select emp_add.*, oo.name as organization, au.first_name, au.last_name from employeeaddress_employeeaddress emp_add 
                 left join employeedetails_employee ee on ee.id = emp_add.user_id 
                 left join auth_user au on au.id = ee.user_id

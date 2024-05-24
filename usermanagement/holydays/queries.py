@@ -3,15 +3,14 @@ from .types import HolydayType
 from .models import Holydays
 from django.db.models import Q
 from datetime import datetime, timedelta
+from usermanagement.utils import user_authentication
 
 class HolydayQuery(ObjectType):
     holydays = List(HolydayType, where = JSONString())
     holyday = Field(HolydayType, where = JSONString())
 
     def resolve_holydays(self, info, where = {}):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
+        user_authentication(info)
         today = datetime.now().date()
         start_of_year = today.replace(month=1, day=1)
         end_of_year = today.replace(month=12, day=31)

@@ -4,6 +4,7 @@ from usermanagement.utils import camel_to_kebab
 from organization.types import OrgAddressType
 from .types import AddressType
 from django.db.models import Q
+from usermanagement.utils import system_user
 
 
 class AddressQuery(ObjectType):
@@ -11,19 +12,7 @@ class AddressQuery(ObjectType):
     address= Field(AddressType, id = Int(required = True))
 
     def resolve_addresses(self, info, where = None, limit = 100, offset = 0, order = None):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        if user_obj.is_superuser != True:
-            raise Exception("Not Allowed")
-        
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
-        if user_org is None:
-            raise Exception("You don't have organization. Please Create to access this")
-        if user_org != 1:
-            raise Exception("Not Permit!")
+        system_user(info)
         orderBy = "street"
         if order is not None:
             orderBy = order.split(" ")[0]
@@ -40,17 +29,5 @@ class AddressQuery(ObjectType):
         return address_data
     
     def resolve_address(self, info, id):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        if user_obj.is_superuser != True:
-            raise Exception("Not Allowed")
-        
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
-        if user_org is None:
-            raise Exception("You don't have organization. Please Create to access this")
-        if user_org != 1:
-            raise Exception("Not Permit!")
+        system_user(info)
         return Address.objects.get(pk = id)

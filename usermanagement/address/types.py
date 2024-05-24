@@ -16,3 +16,11 @@ class AddressOrgInputType(InputObjectType):
     organization = Int()
     lat = String()
     long = String()
+
+class AddressUpdateInput(InputObjectType):
+    street = String()
+    city = String()
+    postal_code = String()
+    state = String()
+    country = String()
+    organization = Int()

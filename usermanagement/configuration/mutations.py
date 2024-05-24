@@ -1,6 +1,7 @@
 from graphene import Mutation, Boolean, Int, ObjectType
 from .models import Configuration
 from .types import ConfigurationInput
+from usermanagement.utils import super_staff_authorization, organization_validation, super_authorization
 
 class CreateConfiguration(Mutation):
     class Arguments:
@@ -9,15 +10,9 @@ class CreateConfiguration(Mutation):
     success = Boolean()
 
     def mutate(self, info, input):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
+        super_staff_authorization(info)
         organization = input.get('organization')
+        user_org = organization_validation(info, organization)
         if user_org != organization:
             raise Exception("Invalid Organization!")
         try:
@@ -38,16 +33,9 @@ class UpdateConfiguration(Mutation):
     success = Boolean()
 
     def mutate(self, info, id, input):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
-        if user_org != input.organization:
-            raise Exception("Not Allowed")
+        super_staff_authorization(info)
+        organization = input.get('organization')
+        organization_validation(info, organization)
         configuration = Configuration.objects.get(pk=id)
         config = input.get('configuration', None)
         if config is not None:
@@ -62,12 +50,7 @@ class DeleteConfiguration(Mutation):
     success = Boolean()
 
     def mutate(self, info, id):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        if user_obj.is_superuser != True:
-            raise Exception("Not Allowed")
+        super_authorization(info)
         configuration = Configuration.objects.get(pk=id)
         configuration.delete()
         return DeleteConfiguration(success=True)

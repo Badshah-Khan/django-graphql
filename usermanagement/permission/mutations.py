@@ -10,7 +10,10 @@ class CreatePermission(Mutation):
     permission = Field(PermissionType)
 
     def mutate(self, info, input):
-        permission = Permission.objects.create(permission_name=input.permission_name, description=input.description)
+        permission = Permission.objects.create(
+            permission_name=input.permission_name, 
+            description=input.description
+        )
         return CreatePermission(success=True, permission=permission)
 
 class UpdatePermission(Mutation):

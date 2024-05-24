@@ -1,6 +1,7 @@
 from graphene import Mutation, ObjectType, Boolean, Int
 from .types import HolydayInput
 from .models import Holydays
+from usermanagement.utils import super_staff_authorization, organization_validation
 
 class CreateHolyday(Mutation):
     class Arguments:
@@ -9,17 +10,9 @@ class CreateHolyday(Mutation):
     success = Boolean()
 
     def mutate(self, info, input):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
+        super_staff_authorization(info)
         organization = input.get('organization')
-        if user_org != organization:
-            raise Exception("Not Allowed")
+        organization_validation(info, organization)
         del input['organization']
         Holydays.objects.create(**input, organization_id = organization)
 
@@ -32,17 +25,9 @@ class UpdateHolyday(Mutation):
     success = Boolean()
 
     def mutate(self, info, input, id):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
+        super_staff_authorization(info)
         organization = input.get('organization')
-        if user_org != organization:
-            raise Exception("Not Allowed")
+        organization_validation(info, organization)
         del input['organization']
 
         holyday = Holydays.objects.get(pk= id)
@@ -55,12 +40,7 @@ class DeleteHolyday(Mutation):
     success = Boolean()
 
     def mutate(self, info, id):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        if user_obj.is_superuser != True and user_obj.is_staff != True:
-            raise Exception("Not Allowed")
+        super_staff_authorization(info)
         holyday = Holydays.objects.get(pk = id)
         holyday.delete()
         return DeleteHolyday(success = True)

@@ -4,18 +4,15 @@ from .types import UserMessageType, MessageType
 from django.db.models import Q
 from channels.layers import get_channel_layer
 from .common import Common
+from usermanagement.utils import user_authentication, organization_validation
 
 class MessageQuery(ObjectType):
     messages = List(MessageType, where = JSONString())
     user_message = List(UserMessageType, where = JSONString())
 
     def resolve_messages(self, info, where):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
+        user_obj = user_authentication(info)
+        user_org = organization_validation(info)
         sender_id = where.get('sender', None)
         if sender_id is None:
             raise Exception('Something went wrong!')
@@ -24,12 +21,8 @@ class MessageQuery(ObjectType):
         return result
     
     def resolve_user_message(self, info, where = None):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        user_obj = info.context.user[0]
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
+        user_obj = user_authentication(info)
+        user_org = organization_validation(info)
         result = Common().users_list(user_obj.id, user_org)
         return result
     

@@ -4,6 +4,7 @@ from configuration.models import Configuration
 from holydays.models import Holydays
 from django.db.models import Q
 from datetime import datetime, timedelta
+from usermanagement.utils import organization_validation, user_authentication
 
 class WorkingDaysType(ObjectType):
     total_working_days = Int()
@@ -17,12 +18,8 @@ class WorkingDaysQuery(ObjectType):
     working_days = Field(WorkingDaysType, where = JSONString())
 
     def resolve_working_days(self, info, where = {}):
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-        
-        token_obj = info.context.user[1]
-        user_org = token_obj['data']['organization']
+        user_authentication(info)
+        user_org = organization_validation(info)
         year = where.get('year', None)
         month = where.get('month', None)
         try:
