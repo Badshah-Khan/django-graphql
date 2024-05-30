@@ -7,6 +7,7 @@ from organization.models import Organization
 from organization.common import CommonMethodOrg
 from employeedetails.models import Employee
 from employeeaddress.models import EmployeeAddress
+from userrole.models import UserRole
 from .types import LoginInput, TokenType, UserInputType, UserUpdateInputType, ChangePasswordInputType
 
 class Login(Mutation):
@@ -47,7 +48,12 @@ class Login(Mutation):
         except Employee.DoesNotExist:
             # Handle the case where no matching employee is found
             print("Employee not found for the specified user.")
-
+        
+        try:
+            user_role = UserRole.objects.get(user_id = user.id)
+            user.role = user_role.role.role
+        except UserRole.DoesNotExist:
+            pass
         # Generate JWT tokens for the authenticated user
         refresh = RefreshToken.for_user(user)
         if user_org is not None:

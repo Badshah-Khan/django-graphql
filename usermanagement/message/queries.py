@@ -1,8 +1,7 @@
-from graphene import ObjectType, List, JSONString, Field, Int
+from graphene import ObjectType, List, JSONString
 from .models import Message
 from .types import UserMessageType, MessageType
 from django.db.models import Q
-from channels.layers import get_channel_layer
 from .common import Common
 from usermanagement.utils import user_authentication, organization_validation
 
@@ -25,35 +24,3 @@ class MessageQuery(ObjectType):
         user_org = organization_validation(info)
         result = Common().users_list(user_obj.id, user_org)
         return result
-    
-class MessageSubscription(ObjectType):
-    new_message = Field(MessageType, sender_id = Int())
-    # new_user = List(UserMessageType, where = JSONString())
-
-    async def resolve_new_message(root, info, sender_id):
-        print("subscription")
-        is_auth = info.context.is_auth
-        if not is_auth:
-            raise Exception("Unauthorized")
-
-        message = Message.objects.get(Q(sender_id = sender_id) | Q(receiver_id = sender_id))
-
-        channel_layer = get_channel_layer()
-        await channel_layer.group_send(
-            "chat_netforth",
-            {
-                'type': 'chat.message',
-                'message': {
-                    'id': message.id,
-                    'content': message.content,
-                    'sender_id': message.sender_id,
-                    'receiver_id': message.receiver_id,
-                    'date': message.date,
-                    'is_read': message.is_read,
-                    'is_deleted': message.is_deleted,
-                    'is_accepted': message.is_accepted,
-                }
-            }
-        )
-        
-        return message

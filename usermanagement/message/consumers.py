@@ -1,14 +1,8 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from urllib.parse import parse_qs
-from message.models import Message
-from userstatus.models import UserStatus
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework_simplejwt.exceptions import TokenError
 from channels.db import database_sync_to_async
 from datetime import datetime
-from .common import Common
-from django.db.models import Q
     
 class SubscriptionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -91,6 +85,7 @@ class SubscriptionConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def set_user_online(self):
+        from userstatus.models import UserStatus
         try:
             user_status = UserStatus.objects.get(user_id = self.user)
             user_status.is_online = True
@@ -101,6 +96,7 @@ class SubscriptionConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def set_user_offline(self):
+        from userstatus.models import UserStatus
         try:
             user_status = UserStatus.objects.get(user_id = self.user)
             user_status.is_online = False
@@ -117,11 +113,13 @@ class SubscriptionConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_online_user(self):
+        from userstatus.models import UserStatus
         user_ids = UserStatus.objects.filter(is_online = True).exclude(user_id=self.user).values_list('user_id', flat=True)
         return list(user_ids)
     
     @database_sync_to_async
     def get_receiver_user(self, id):
+        from userstatus.models import UserStatus
         try:
             user_status = UserStatus.objects.get(user_id = id)
         except UserStatus.DoesNotExist:
@@ -135,6 +133,7 @@ class SubscriptionConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def create_message(self, message, receiver_id):
+        from .models import Message
         return Message.objects.create(
             content=message['content'],
             date=message['date'],
@@ -145,6 +144,7 @@ class SubscriptionConsumer(AsyncWebsocketConsumer):
     
     @database_sync_to_async
     def get_users(self, user_id):
+        from .common import Common
         user_list = Common().users_list(user_id, self.organization)
         result = [{
             'id': item.id,
@@ -203,6 +203,8 @@ class TypingConsumer(AsyncWebsocketConsumer):
         }))
 
 def verify_token(token):
+    from rest_framework_simplejwt.tokens import AccessToken
+    from rest_framework_simplejwt.exceptions import TokenError
     try:
         access_token = AccessToken(token)
         return access_token.payload

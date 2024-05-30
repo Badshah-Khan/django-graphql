@@ -22,6 +22,7 @@ class UserType(ObjectType):
     joining_date = Date()
     mobile = String()
     profile = String()
+    role = String()
 
 class TokenType(ObjectType):
     token = String()
