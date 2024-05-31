@@ -25,3 +25,11 @@ class AttendanceUserType(ObjectType):
     attendance = Field(AttendanceType)
     organization = Field(OrganizationType)
     user = Field(UserType)
+
+class UserAttendanceType(ObjectType):
+    first_name = String()
+    last_name = String()
+    user_id = Int()
+    present = Int()
+    absent = Int()
+    working_days = Int()
