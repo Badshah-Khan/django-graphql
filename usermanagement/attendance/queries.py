@@ -1,4 +1,4 @@
-from graphene import ObjectType, List, JSONString, Int
+from graphene import ObjectType, List, JSONString, Int, String
 from .models import Attendance
 from .types import AttendanceUserType, UserAttendanceType
 from datetime import datetime, timedelta
@@ -6,21 +6,26 @@ from django.db.models import Q
 from usermanagement.utils import organization_validation, user_authentication, super_staff_authorization
 
 class AttendanceQuery(ObjectType):
-    attendances = List(AttendanceUserType, where = JSONString(), limit = Int())
-    user_attendance = List(UserAttendanceType, where = JSONString(), limit = Int())
+    attendances = List(AttendanceUserType, where = JSONString(), limit = Int(), offset = Int(), order = String())
+    user_attendance = List(UserAttendanceType, where = JSONString(), limit = Int(), order = String(), offset = Int())
 
-    def resolve_attendances(self, info, where = None, limit = None):
+    def resolve_attendances(self, info, where, limit = 100, offset = 0, order = None):
         user_obj = user_authentication(info)
         user_org = organization_validation(info)
         if user_org is None:
             raise Exception("You don't have organization. Please Create to access this")
 
-        result = Attendance.objects.filter(user_id = user_obj.id, organization = user_org)
+        result = Attendance.objects.filter(organization = user_org)
         today = datetime.now().date()
         start_date = today.replace(day=1)
         end_date = start_date.replace(day=1, month=start_date.month % 12 + 1) - timedelta(days=1)
         if where is not None:
             filter = where.get('filter', None)
+            user_id = where.get('userId', None)
+            if user_id is not None:
+                result = result.filter(user_id = user_id)
+            else:
+                result = result.filter(user_id = user_obj.id)
             if filter is not None:
                 if filter == 'week':
                     start_date = today - timedelta(days=today.weekday())
@@ -35,7 +40,7 @@ class AttendanceQuery(ObjectType):
         attendance = [{'attendance': item, 'organization': item.organization, 'user': item.user} for item in result]
         return attendance
 
-    def resolve_user_attendance(self, info, where, limit):
+    def resolve_user_attendance(self, info, where, limit = 100, order = None, offset = 0):
         print("info", info)
         super_staff_authorization(info)
         user_org = organization_validation(info)
