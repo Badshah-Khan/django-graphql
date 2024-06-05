@@ -60,7 +60,9 @@ INSTALLED_APPS = [
     'message',
     'channels',
     'userstatus',
-    'configuration'
+    'configuration',
+    'notification',
+    'devicetoken'
 ]
 
 CHANNEL_LAYERS = {

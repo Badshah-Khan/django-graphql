@@ -50,7 +50,7 @@ class WorkingDaysQuery(ObjectType):
             elif filter == 'month':
                 result = WorkingDays.objects.get(year = year, month=month)
                 if saturday_working['isSaturdayWorking'] == True:
-                        working_days += result.total_working_days + result.saturday
+                    working_days += result.total_working_days + result.saturday
                 else:
                     working_days += result.total_working_days
                 start = today.replace(day=1)

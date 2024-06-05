@@ -24,8 +24,10 @@ from userstatus.queries import UserStatusQuery
 from configuration.mutations import ConfigurationMutation
 from holydays.mutations import HolydayMutation
 from holydays.queries import HolydayQuery
+from devicetoken.queries import DeviceTokenQuery
+from devicetoken.mutations import DeviceTokenMutation
 
-class Query(OrganizationQuery, AddressQuery, AttendanceQuery, LeaveQuery, 
+class Query(OrganizationQuery, AddressQuery, AttendanceQuery, LeaveQuery, DeviceTokenQuery,
             PermissionQuery, UserRoleQuery, UserTypeQuery, UserQuery, HolydayQuery,
             EmpAddressQuery, WorkingDaysQuery, MessageQuery, UserStatusQuery, ObjectType):
     pass
@@ -33,7 +35,7 @@ class Query(OrganizationQuery, AddressQuery, AttendanceQuery, LeaveQuery,
 class Mutation(OrganizationMutation, AddressMutation, AttendanceMutation, HolydayMutation,
                LeaveMutation, LoginMutation, PermissionMutation, ConfigurationMutation,
                RoleMutation, UserTypeMutation, WorkingDaysMutation, MessageMutation,
-               ObjectType):
+               DeviceTokenMutation, ObjectType):
     pass
 
 schema = Schema(query=Query, mutation=Mutation)

@@ -17,6 +17,9 @@ class AttendanceQuery(ObjectType):
 
         result = Attendance.objects.filter(organization = user_org)
         today = datetime.now().date()
+        month = where.get('month', None)
+        if month is not None:
+            today = today.replace(month=month)
         start_date = today.replace(day=1)
         end_date = start_date.replace(day=1, month=start_date.month % 12 + 1) - timedelta(days=1)
         if where is not None:
@@ -41,7 +44,6 @@ class AttendanceQuery(ObjectType):
         return attendance
 
     def resolve_user_attendance(self, info, where, limit = 100, order = None, offset = 0):
-        print("info", info)
         super_staff_authorization(info)
         user_org = organization_validation(info)
         if user_org is None:
@@ -55,8 +57,15 @@ class AttendanceQuery(ObjectType):
         parameters = [user_org]
 
         today = datetime.now().date()
+
+        month = where.get('month', None)
+        print("month", month)
+        if month is not None:
+            today = today.replace(month=month)
         start_date = today.replace(day=1)
+        print("start_date", start_date)
         end_date = start_date.replace(day=1, month=start_date.month % 12 + 1) - timedelta(days=1)
+        print('end_date', end_date)
         filter = where.get('filter', None)
         if filter is not None:
             if filter == 'week':

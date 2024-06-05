@@ -40,14 +40,8 @@ class UpdateAttendance(Mutation):
     def mutate(self, info, id, input):
         super_staff_authorization(info)
         organization_validation(info, input.organization)
-        attendance = Attendance.objects.get(pk=id, user = input.user, organization = input.organization)
-        date = input.get('date', None)
-        if date is not None:
-            attendance.date = date
-        if input.in_time:
-            attendance.in_time = input.in_time
-        if input.out_time:
-            attendance.out_time = input.out_time
+        attendance = Attendance.objects.get(pk=id)
+        attendance.out_time = input.out_time
         attendance.save()
         return UpdateAttendance(success=True)
     

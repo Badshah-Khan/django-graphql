@@ -15,10 +15,7 @@ class AttendanceInput(InputObjectType):
     organization = Int(required = True)
 
 class AttendanceUpdateInput(InputObjectType):
-    date = String(required = True)
-    in_time = String()
-    out_time = String()
-    user = Int(required = True)
+    out_time = String(required = True)
     organization = Int(required = True)
 
 class AttendanceUserType(ObjectType):
