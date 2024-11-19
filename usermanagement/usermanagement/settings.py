@@ -4,13 +4,6 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-PUBLIC_FOLDER_PATH = os.path.join(BASE_DIR, 'public_folder')
-
-STATICFILES_DIRS = [
-    PUBLIC_FOLDER_PATH,
-]
-
-PUBLIC_FOLDER_URL_PREFIX = '/public/'
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
@@ -129,7 +122,7 @@ ASGI_APPLICATION = 'usermanagement.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'django_project',
+        'NAME': 'netforth_app',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
         'HOST': 'localhost',
@@ -172,9 +165,22 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
+PUBLIC_FOLDER_PATH = os.path.join(BASE_DIR, 'public_folder')
+
+STATICFILES_DIRS = [
+    PUBLIC_FOLDER_PATH,
+]
+
+PUBLIC_FOLDER_URL_PREFIX = '/public/'
+
 STATIC_URL = 'static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# admin@system.com
+# System@123

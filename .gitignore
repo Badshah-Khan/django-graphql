@@ -1,4 +1,5 @@
-env
+venv
 migrations
 __pycache__
 public_folder
+staticfiles
